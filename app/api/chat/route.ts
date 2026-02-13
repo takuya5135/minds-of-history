@@ -79,9 +79,13 @@ ${participantsInfo}
         return NextResponse.json({ text })
     } catch (error: any) {
         console.error('Chat API Error:', error)
+
+        const status = error.message?.includes('429') ? 429 : 500
+        const message = error.message || 'Internal Server Error'
+
         return NextResponse.json(
-            { error: error.message || 'Internal Server Error' },
-            { status: 500 }
+            { error: message },
+            { status: status }
         )
     }
 }

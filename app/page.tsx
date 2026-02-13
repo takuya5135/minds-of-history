@@ -10,6 +10,25 @@ import { Menu, MoreHorizontal, Info } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 
+const MAX_RETRIES = 3
+const RETRY_DELAY = 1000
+
+async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_RETRIES): Promise<Response> {
+  try {
+    const response = await fetch(url, options)
+    if (!response.ok && retries > 0 && response.status >= 500) {
+      throw new Error(`Server error: ${response.status}`)
+    }
+    return response
+  } catch (error) {
+    if (retries > 0) {
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (MAX_RETRIES - retries + 1)))
+      return fetchWithRetry(url, options, retries - 1)
+    }
+    throw error
+  }
+}
+
 export default function ChatPage() {
   const [selectedCharId, setSelectedCharId] = useState<string>(CHARACTERS[0].id)
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -55,7 +74,7 @@ export default function ChatPage() {
         // Exclude the current message from history because we send it as 'message'
         .slice(0, -1)
 
-      const response = await fetch('/api/chat', {
+      const response = await fetchWithRetry('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -82,12 +101,20 @@ export default function ChatPage() {
         created_at: new Date().toISOString(),
       }
       setMessages(prev => [...prev, botResponse])
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to send message:', error)
+
+      let errorMessage = 'すみません、エラーが発生しました。もう一度お話しいただけますか？'
+      if (error.message.includes('504') || error.message.includes('timeout')) {
+        errorMessage = '考え込んでしまってタイムアウトしました。もう一度聞いてみてください。'
+      } else if (error.message.includes('429')) {
+        errorMessage = '少し混み合っているようです。少し時間を置いてから話しかけてください。'
+      }
+
       const errorResponse: Message = {
         id: crypto.randomUUID(),
         role: 'model',
-        content: 'すみません、エラーが発生しました。もう一度お話しいただけますか？',
+        content: errorMessage,
         created_at: new Date().toISOString(),
       }
       setMessages(prev => [...prev, errorResponse])
