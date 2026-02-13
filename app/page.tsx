@@ -1,0 +1,155 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { Sidebar } from '@/components/chat/Sidebar'
+import { MessageList } from '@/components/chat/MessageList'
+import { MessageInput } from '@/components/chat/MessageInput'
+import { CHARACTERS } from '@/lib/characters'
+import { Character, Message } from '@/types/chat'
+import { Menu, MoreHorizontal, Info } from 'lucide-react'
+import { createClient } from '@/utils/supabase/client'
+import { useRouter } from 'next/navigation'
+
+export default function ChatPage() {
+  const [selectedCharId, setSelectedCharId] = useState<string>(CHARACTERS[0].id)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [messages, setMessages] = useState<Message[]>([])
+  const [loading, setLoading] = useState(false)
+  const [user, setUser] = useState<any>(null)
+
+  const router = useRouter()
+  const supabase = createClient()
+
+  // Load user
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUser(user)
+      } else {
+        router.push('/login')
+      }
+    }
+    getUser()
+  }, [])
+
+  const selectedChar = CHARACTERS.find(c => c.id === selectedCharId) || CHARACTERS[0]
+
+  const handleSendMessage = async (content: string) => {
+    const newMessage: Message = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      content,
+      created_at: new Date().toISOString(),
+    }
+
+    // Optimistic update
+    const updatedMessages = [...messages, newMessage]
+    setMessages(updatedMessages)
+    setLoading(true)
+
+    try {
+      // Filter out the welcome message if it exists (id: 'welcome') as it's not part of the conversation history for the API usually
+      const history = updatedMessages
+        .filter(m => m.id !== 'welcome')
+        // Exclude the current message from history because we send it as 'message'
+        .slice(0, -1)
+
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: content,
+          history,
+          characterId: selectedChar.id,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('API Error Details:', errorData)
+        throw new Error(errorData.error || `API request failed with status ${response.status}`)
+      }
+
+      const data = await response.json()
+
+      const botResponse: Message = {
+        id: crypto.randomUUID(),
+        role: 'model',
+        content: data.text,
+        created_at: new Date().toISOString(),
+      }
+      setMessages(prev => [...prev, botResponse])
+    } catch (error) {
+      console.error('Failed to send message:', error)
+      const errorResponse: Message = {
+        id: crypto.randomUUID(),
+        role: 'model',
+        content: 'すみません、エラーが発生しました。もう一度お話しいただけますか？',
+        created_at: new Date().toISOString(),
+      }
+      setMessages(prev => [...prev, errorResponse])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Clear messages when character changes (optional, or load history)
+  useEffect(() => {
+    setMessages([
+      {
+        id: 'welcome',
+        role: 'model',
+        content: `こんにちは。${selectedChar.name}です。何か悩み事はありますか？`,
+        created_at: new Date().toISOString()
+      }
+    ])
+  }, [selectedCharId])
+
+  if (!user) return null
+
+  return (
+    <div className="flex h-screen bg-gray-100 dark:bg-black overflow-hidden">
+      <Sidebar
+        characters={CHARACTERS}
+        selectedId={selectedCharId}
+        onSelect={setSelectedCharId}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+
+      <div className="flex flex-1 flex-col h-full w-full relative">
+        {/* Header */}
+        <header className="flex h-16 items-center justify-between border-b bg-white dark:bg-zinc-950 px-4 shadow-sm z-10">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="rounded-md p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 md:hidden"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <h1 className="text-xl font-bold truncate">{selectedChar.name}</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <button className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full" title={selectedChar.description}>
+              <Info className="h-5 w-5 text-gray-500" />
+            </button>
+          </div>
+        </header>
+
+        {/* Chat Area */}
+        <MessageList
+          messages={messages}
+          character={selectedChar}
+        />
+
+        {/* Input Area */}
+        <div className="w-full bg-white dark:bg-zinc-950">
+          <MessageInput onSend={handleSendMessage} disabled={loading} />
+        </div>
+      </div>
+    </div>
+  )
+}
