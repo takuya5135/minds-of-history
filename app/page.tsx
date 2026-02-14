@@ -210,7 +210,7 @@ export default function ChatPage() {
 
       <div className="flex flex-1 flex-col h-full w-full relative">
         {/* Header */}
-        <header className="flex h-16 items-center justify-between border-b bg-white dark:bg-zinc-950 px-4 shadow-sm z-10">
+        <header className="flex h-16 items-center justify-between border-b bg-white dark:bg-zinc-950 px-4 shadow-sm z-20 sticky top-0">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
