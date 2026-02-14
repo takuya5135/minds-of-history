@@ -341,14 +341,12 @@ export default function ChatPage() {
         </header>
 
         {/* Chat Area */}
-        <div className="flex-1 overflow-hidden">
-          <MessageList
-            messages={messages}
-            character={selectedChar}
-            userAvatarUrl={profile?.avatar_url}
-            userName={profile?.username}
-          />
-        </div>
+        <MessageList
+          messages={messages}
+          character={selectedChar}
+          userAvatarUrl={profile?.avatar_url}
+          userName={profile?.username}
+        />
 
         <div className="shrink-0 border-t bg-white dark:bg-zinc-950 p-4">
           <MessageInput onSend={handleSendMessage} disabled={loading} />
