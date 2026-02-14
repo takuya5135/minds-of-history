@@ -115,6 +115,23 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
+        // Auto-cleanup: Delete wisdoms older than 30 days
+        const retentionPeriodDays = 30
+        const cleanupThreshold = new Date()
+        cleanupThreshold.setDate(cleanupThreshold.getDate() - retentionPeriodDays)
+
+        // Fire and forget cleanup (or await if strict consistency is needed, await is safer to ensure user doesn't see old data)
+        const { error: cleanupError } = await supabase
+            .from('wisdoms')
+            .delete()
+            .lt('created_at', cleanupThreshold.toISOString())
+            .eq('user_id', user.id) // Only delete user's own data to be safe in this scope, though RLS handles it.
+
+        if (cleanupError) {
+            console.error('Auto-cleanup error:', cleanupError)
+            // Continue fetching, don't block user for cleanup error
+        }
+
         const { data: wisdoms, error } = await supabase
             .from('wisdoms')
             .select('*')
