@@ -1,6 +1,9 @@
+'use client'
+
 import { Character } from '@/types/chat'
 import { cn } from '@/lib/utils'
 import { Bot, ChevronLeft } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 interface SidebarProps {
     characters: Character[]
@@ -15,6 +18,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ characters, selectedId, onSelect, isOpen, onClose, userProfile }: SidebarProps) {
+    const router = useRouter()
     return (
         <>
             {/* Mobile overlay */}
@@ -70,8 +74,11 @@ export function Sidebar({ characters, selectedId, onSelect, isOpen, onClose, use
                 </div>
                 <div className="mt-auto border-t dark:border-zinc-800 p-2 space-y-1">
                     {userProfile && (
-                        <a
-                            href="/profile/setup"
+                        <button
+                            onClick={() => {
+                                router.push('/profile/setup')
+                                onClose()
+                            }}
                             className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-zinc-900 transition-colors group"
                             title="プロフィールを編集"
                         >
@@ -86,7 +93,7 @@ export function Sidebar({ characters, selectedId, onSelect, isOpen, onClose, use
                                 <div className="font-medium truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400">{userProfile.username}</div>
                                 <div className="text-[10px] text-gray-500 dark:text-gray-400">相談者 (設定変更)</div>
                             </div>
-                        </a>
+                        </button>
                     )}
 
                     <div className="px-3 py-1 mb-2">
