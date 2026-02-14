@@ -124,12 +124,14 @@ export default function ChatPage() {
     }
   }
 
-  // Load history when character changes
+  const [lastRefresh, setLastRefresh] = useState(Date.now())
+
+  // Load history when character changes or refresh triggered
   useEffect(() => {
     const loadHistory = async () => {
       setLoading(true)
       try {
-        const response = await fetchWithRetry(`/api/chat?characterId=${selectedCharId}`, {
+        const response = await fetchWithRetry(`/api/chat?characterId=${selectedCharId}&t=${lastRefresh}`, {
           method: 'GET'
         })
 
@@ -175,7 +177,9 @@ export default function ChatPage() {
       if (response.ok) {
         // Successfully saved wisdom and cleared chat
         alert('智慧の書に記録しました。')
-        // Reset messages
+        // Trigger re-fetch for all rooms by updating the refresh timestamp
+        setLastRefresh(Date.now())
+        // Reset current messages immediately for better UX
         setMessages([
           {
             id: 'welcome',
@@ -184,7 +188,6 @@ export default function ChatPage() {
             created_at: new Date().toISOString()
           }
         ])
-        // Optional: Redirect to wisdom page or just stay
       } else {
         alert('保存に失敗しました。')
       }

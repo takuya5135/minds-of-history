@@ -29,11 +29,14 @@ export async function POST(req: Request) {
         // 2. Fetch all messages across these chats ordered chronologically
         const { data: messages, error: msgError } = await supabase
             .from('messages')
-            .select('*, chats(character_id)')
+            .select('role, content, created_at, chat_id, chats!inner(character_id)')
             .in('chat_id', chatIds)
             .order('created_at', { ascending: true })
 
-        if (msgError) throw msgError
+        if (msgError) {
+            console.error('Fetch Messages Error:', msgError)
+            throw new Error(`Failed to fetch messages: ${msgError.message}`)
+        }
 
         if (!messages || messages.length === 0) {
             return NextResponse.json({ error: 'No messages to summarize' }, { status: 400 })
@@ -42,6 +45,7 @@ export async function POST(req: Request) {
         // 3. Summarize with Gemini
         const apiKey = process.env.GEMINI_API_KEY
         if (!apiKey) {
+            console.error('API key missing')
             return NextResponse.json({ error: 'API key not configured' }, { status: 500 })
         }
 
@@ -57,7 +61,7 @@ export async function POST(req: Request) {
         }).join('\n')
 
         const genAI = new GoogleGenerativeAI(apiKey)
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' }) // Using Pro for better summarization of multi-turn logic
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' })
 
         const prompt = `
 あなたは数々の偉人の知恵を編纂する書記官です。
@@ -98,18 +102,26 @@ ${conversationText}
                 summary: summary
             })
 
-        if (insertError) throw insertError
+        if (insertError) {
+            console.error('Insert Wisdom Error:', insertError)
+            throw insertError
+        }
 
-        // 5. Clear ALL summarized messages and cleanup chats
-        await supabase
+        // 5. Clear ALL summarized messages
+        const { error: deleteError } = await supabase
             .from('messages')
             .delete()
             .in('chat_id', chatIds)
 
+        if (deleteError) {
+            console.error('Clear Messages Error:', deleteError)
+            // Even if message deletion fails, we saved the wisdom, so we don't throw, but log it.
+        }
+
         return NextResponse.json({ success: true })
 
     } catch (error: any) {
-        console.error('Wisdom API Error:', error)
+        console.error('Wisdom API POST Error:', error)
         return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 })
     }
 }
@@ -128,17 +140,11 @@ export async function GET(req: Request) {
         const cleanupThreshold = new Date()
         cleanupThreshold.setDate(cleanupThreshold.getDate() - retentionPeriodDays)
 
-        // Fire and forget cleanup (or await if strict consistency is needed, await is safer to ensure user doesn't see old data)
-        const { error: cleanupError } = await supabase
+        await supabase
             .from('wisdoms')
             .delete()
             .lt('created_at', cleanupThreshold.toISOString())
-            .eq('user_id', user.id) // Only delete user's own data to be safe in this scope, though RLS handles it.
-
-        if (cleanupError) {
-            console.error('Auto-cleanup error:', cleanupError)
-            // Continue fetching, don't block user for cleanup error
-        }
+            .eq('user_id', user.id)
 
         const { data: wisdoms, error } = await supabase
             .from('wisdoms')
@@ -150,7 +156,38 @@ export async function GET(req: Request) {
 
         return NextResponse.json({ wisdoms })
     } catch (error: any) {
-        console.error('Wisdom API Error:', error)
+        console.error('Wisdom API GET Error:', error)
         return NextResponse.json({ error: 'Failed to fetch wisdoms' }, { status: 500 })
+    }
+}
+
+export async function DELETE(req: Request) {
+    try {
+        const { searchParams } = new URL(req.url)
+        const id = searchParams.get('id')
+
+        if (!id) {
+            return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
+        }
+
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
+        const { error } = await supabase
+            .from('wisdoms')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', user.id)
+
+        if (error) throw error
+
+        return NextResponse.json({ success: true })
+    } catch (error: any) {
+        console.error('Wisdom API DELETE Error:', error)
+        return NextResponse.json({ error: 'Failed to delete wisdom' }, { status: 500 })
     }
 }
