@@ -8,9 +8,13 @@ interface SidebarProps {
     onSelect: (id: string) => void
     isOpen: boolean
     onClose: () => void
+    userProfile?: {
+        username: string
+        avatar_url: string
+    }
 }
 
-export function Sidebar({ characters, selectedId, onSelect, isOpen, onClose }: SidebarProps) {
+export function Sidebar({ characters, selectedId, onSelect, isOpen, onClose, userProfile }: SidebarProps) {
     return (
         <>
             {/* Mobile overlay */}
@@ -64,14 +68,30 @@ export function Sidebar({ characters, selectedId, onSelect, isOpen, onClose }: S
                         )
                     })}
                 </div>
-                <div className="mt-auto border-t dark:border-zinc-800 p-2">
+                <div className="mt-auto border-t dark:border-zinc-800 p-2 space-y-1">
+                    {userProfile && (
+                        <div className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-zinc-800 overflow-hidden border border-gray-200 dark:border-zinc-700">
+                                {userProfile.avatar_url ? (
+                                    <img src={userProfile.avatar_url} alt={userProfile.username} className="h-full w-full object-cover" />
+                                ) : (
+                                    <div className="text-xs font-bold text-gray-500">{userProfile.username.substring(0, 1)}</div>
+                                )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <div className="font-medium truncate">{userProfile.username}</div>
+                                <div className="text-[10px] text-gray-500 dark:text-gray-400">相談者</div>
+                            </div>
+                        </div>
+                    )}
+
                     <a href="/wisdom" className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-gray-100 dark:hover:bg-zinc-900 text-indigo-600 dark:text-indigo-400">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-50 dark:bg-indigo-900/20">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></svg>
+                            <Bot className="h-5 w-5" />
                         </div>
                         <div>
                             <div className="font-medium">智慧の書</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">対話の記録と要約</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">要約と記録</div>
                         </div>
                     </a>
                 </div>

@@ -17,7 +17,11 @@ export default function ProfileSetupPage() {
         gender: '',
         marital_status: '',
         children_count: '0',
+        avatar_url: '/avatars/human_1.png', // Default
     })
+
+    const humanAvatars = Array.from({ length: 8 }, (_, i) => `/avatars/human_${i + 1}.png`)
+    const animalAvatars = Array.from({ length: 8 }, (_, i) => `/avatars/animal_${i + 1}.png`)
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -42,6 +46,7 @@ export default function ProfileSetupPage() {
                 gender: formData.gender,
                 marital_status: formData.marital_status,
                 children_count: parseInt(formData.children_count, 10),
+                avatar_url: formData.avatar_url,
                 updated_at: new Date().toISOString(),
             })
             .eq('id', user.id)
@@ -61,6 +66,10 @@ export default function ProfileSetupPage() {
         setFormData(prev => ({ ...prev, [name]: value }))
     }
 
+    const selectAvatar = (url: string) => {
+        setFormData(prev => ({ ...prev, avatar_url: url }))
+    }
+
     return (
         <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-gray-50 dark:bg-zinc-950">
             <div className="w-full max-w-md space-y-8 bg-white dark:bg-zinc-900 p-8 rounded-xl shadow-lg">
@@ -77,6 +86,53 @@ export default function ProfileSetupPage() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* アイコン選択セクション */}
+                    <div className="space-y-4">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            自分のアイコンを選択してください
+                        </label>
+
+                        <div className="space-y-4">
+                            <div>
+                                <p className="text-xs text-gray-500 mb-2">人物</p>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {humanAvatars.map((url) => (
+                                        <button
+                                            key={url}
+                                            type="button"
+                                            onClick={() => selectAvatar(url)}
+                                            className={`relative aspect-square rounded-full overflow-hidden border-2 transition-all ${formData.avatar_url === url
+                                                    ? 'border-indigo-600 ring-2 ring-indigo-600 ring-offset-2'
+                                                    : 'border-transparent grayscale hover:grayscale-0'
+                                                }`}
+                                        >
+                                            <img src={url} alt="avatar" className="w-full h-full object-cover" />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <p className="text-xs text-gray-500 mb-2">動物</p>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {animalAvatars.map((url) => (
+                                        <button
+                                            key={url}
+                                            type="button"
+                                            onClick={() => selectAvatar(url)}
+                                            className={`relative aspect-square rounded-full overflow-hidden border-2 transition-all ${formData.avatar_url === url
+                                                    ? 'border-indigo-600 ring-2 ring-indigo-600 ring-offset-2'
+                                                    : 'border-transparent grayscale hover:grayscale-0'
+                                                }`}
+                                        >
+                                            <img src={url} alt="avatar" className="w-full h-full object-cover" />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="space-y-4">
                         <div>
                             <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">

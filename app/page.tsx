@@ -36,21 +36,32 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false)
   const [savingWisdom, setSavingWisdom] = useState(false)
   const [user, setUser] = useState<any>(null)
+  const [profile, setProfile] = useState<any>(null)
 
   const router = useRouter()
   const supabase = createClient()
 
-  // Load user
+  // Load user and profile
   useEffect(() => {
-    const getUser = async () => {
+    const getUserAndProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUser(user)
+        // Fetch profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('username, avatar_url')
+          .eq('id', user.id)
+          .single()
+
+        if (profile) {
+          setProfile(profile)
+        }
       } else {
         router.push('/login')
       }
     }
-    getUser()
+    getUserAndProfile()
   }, [])
 
   const selectedChar = CHARACTERS.find(c => c.id === selectedCharId) || CHARACTERS[0]
@@ -209,6 +220,7 @@ export default function ChatPage() {
         onSelect={setSelectedCharId}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        userProfile={profile}
       />
 
       <div className="flex flex-1 flex-col h-full relative bg-white dark:bg-zinc-950 overflow-hidden">
@@ -249,6 +261,8 @@ export default function ChatPage() {
         <MessageList
           messages={messages}
           character={selectedChar}
+          userAvatarUrl={profile?.avatar_url}
+          userName={profile?.username}
         />
 
         {/* Input Area */}

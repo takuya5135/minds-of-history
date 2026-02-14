@@ -15,9 +15,11 @@ const fadeInStyle = `
 interface MessageListProps {
     messages: Message[]
     character: Character
+    userAvatarUrl?: string
+    userName?: string
 }
 
-export function MessageList({ messages, character }: MessageListProps) {
+export function MessageList({ messages, character, userAvatarUrl, userName }: MessageListProps) {
     const bottomRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
@@ -139,8 +141,14 @@ export function MessageList({ messages, character }: MessageListProps) {
                         </div>
 
                         {isUser && (
-                            <div className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/30 overflow-hidden">
-                                <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">You</span>
+                            <div className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/30 overflow-hidden border">
+                                {userAvatarUrl ? (
+                                    <img src={userAvatarUrl} alt={userName || 'User'} className="h-full w-full object-cover" />
+                                ) : (
+                                    <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                                        {(userName || 'You').substring(0, 1).toUpperCase()}
+                                    </span>
+                                )}
                             </div>
                         )}
                     </div>
