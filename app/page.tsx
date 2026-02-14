@@ -6,7 +6,7 @@ import { MessageList } from '@/components/chat/MessageList'
 import { MessageInput } from '@/components/chat/MessageInput'
 import { CHARACTERS } from '@/lib/characters'
 import { Character, Message } from '@/types/chat'
-import { Menu, MoreHorizontal, Info } from 'lucide-react'
+import { Menu, MoreHorizontal, Info, BookOpen, Save } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 
@@ -34,6 +34,7 @@ export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(false)
+  const [savingWisdom, setSavingWisdom] = useState(false)
   const [user, setUser] = useState<any>(null)
 
   const router = useRouter()
@@ -123,17 +124,77 @@ export default function ChatPage() {
     }
   }
 
-  // Clear messages when character changes (optional, or load history)
+  // Load history when character changes
   useEffect(() => {
-    setMessages([
-      {
-        id: 'welcome',
-        role: 'model',
-        content: `こんにちは。${selectedChar.name}です。何か悩み事はありますか？`,
-        created_at: new Date().toISOString()
+    const loadHistory = async () => {
+      setLoading(true)
+      try {
+        const response = await fetchWithRetry(`/api/chat?characterId=${selectedCharId}`, {
+          method: 'GET'
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          if (data.messages && data.messages.length > 0) {
+            setMessages(data.messages)
+          } else {
+            // Initial welcome message if no history
+            setMessages([
+              {
+                id: 'welcome',
+                role: 'model',
+                content: `こんにちは。${selectedChar.name}です。何か悩み事はありますか？`,
+                created_at: new Date().toISOString()
+              }
+            ])
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load history:', error)
+      } finally {
+        setLoading(false)
       }
-    ])
-  }, [selectedCharId])
+    }
+
+    if (user) {
+      loadHistory()
+    }
+  }, [selectedCharId, user])
+
+  const handleFinishConversation = async () => {
+    if (!confirm('この会話を終了して「智慧の書」に記録しますか？\n現在のチャット履歴はリセットされます。')) return
+
+    setSavingWisdom(true)
+    try {
+      const response = await fetch('/api/wisdom', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ characterId: selectedCharId })
+      })
+
+      if (response.ok) {
+        // Successfully saved wisdom and cleared chat
+        alert('智慧の書に記録しました。')
+        // Reset messages
+        setMessages([
+          {
+            id: 'welcome',
+            role: 'model',
+            content: `こんにちは。${selectedChar.name}です。新たな対話を始めましょう。`,
+            created_at: new Date().toISOString()
+          }
+        ])
+        // Optional: Redirect to wisdom page or just stay
+      } else {
+        alert('保存に失敗しました。')
+      }
+    } catch (error) {
+      console.error('Failed to save wisdom:', error)
+      alert('エラーが発生しました。')
+    } finally {
+      setSavingWisdom(false)
+    }
+  }
 
   if (!user) return null
 
@@ -160,6 +221,21 @@ export default function ChatPage() {
             <h1 className="text-xl font-bold truncate">{selectedChar.name}</h1>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleFinishConversation}
+              disabled={savingWisdom || messages.length <= 1}
+              className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title="会話を終了して智慧の書に記録する"
+            >
+              {savingWisdom ? (
+                <span className="animate-pulse">記録中...</span>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  <span className="hidden sm:inline">記録して終了</span>
+                </>
+              )}
+            </button>
             <button className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full" title={selectedChar.description}>
               <Info className="h-5 w-5 text-gray-500" />
             </button>

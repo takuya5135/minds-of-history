@@ -3,6 +3,67 @@ import { NextResponse } from 'next/server'
 import { CHARACTERS } from '@/lib/characters'
 import { createClient } from '@/utils/supabase/server'
 
+// Helper to get or create chat session
+async function getOrCreateChatId(supabase: any, userId: string, characterId: string) {
+    const { data: chat } = await supabase
+        .from('chats')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('character_id', characterId)
+        .single()
+
+    if (chat) return chat.id
+
+    const { data: newChat, error } = await supabase
+        .from('chats')
+        .insert({ user_id: userId, character_id: characterId })
+        .select('id')
+        .single()
+
+    if (error) throw error
+    return newChat.id
+}
+
+export async function GET(req: Request) {
+    try {
+        const { searchParams } = new URL(req.url)
+        const characterId = searchParams.get('characterId')
+
+        if (!characterId) {
+            return NextResponse.json({ error: 'Character ID required' }, { status: 400 })
+        }
+
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
+        const { data: chat } = await supabase
+            .from('chats')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('character_id', characterId)
+            .single()
+
+        if (!chat) {
+            return NextResponse.json({ messages: [] })
+        }
+
+        const { data: messages } = await supabase
+            .from('messages')
+            .select('*')
+            .eq('chat_id', chat.id)
+            .order('created_at', { ascending: true })
+
+        return NextResponse.json({ messages: messages || [] })
+    } catch (error: any) {
+        console.error('History API Error:', error)
+        return NextResponse.json({ error: 'Failed to fetch history' }, { status: 500 })
+    }
+}
+
 export async function POST(req: Request) {
     try {
         const { message, history, characterId } = await req.json()
@@ -26,6 +87,23 @@ export async function POST(req: Request) {
         // Fetch user profile
         const supabase = await createClient()
         const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            return NextResponse.json(
+                { error: 'Unauthorized' },
+                { status: 401 }
+            )
+        }
+
+        // 1. Get or Create Chat Session & Save User Message
+        const chatId = await getOrCreateChatId(supabase, user.id, characterId)
+
+        // Save user message (fire and forget or await, better await to ensure order/success)
+        await supabase.from('messages').insert({
+            chat_id: chatId,
+            role: 'user',
+            content: message
+        })
 
         let userProfileInfo = ''
         if (user) {
@@ -132,6 +210,13 @@ ${userProfileInfo}
         const result = await chat.sendMessage(message)
         const response = await result.response
         const text = response.text()
+
+        // 2. Save Model Response
+        await supabase.from('messages').insert({
+            chat_id: chatId,
+            role: 'model',
+            content: text
+        })
 
         return NextResponse.json({ text })
     } catch (error: any) {

@@ -82,7 +82,7 @@ export function MessageList({ messages, character }: MessageListProps) {
                                         </div>
 
                                         <div className="flex flex-col max-w-[80%]">
-                                            <span className="text-xs text-gray-500 ml-1 mb-1">{part.name}</span>
+                                            <span className="text-xs font-medium text-gray-900 dark:text-gray-100 ml-1 mb-1">{part.name}</span>
                                             <div className={cn(
                                                 "relative rounded-2xl px-4 py-2 text-sm shadow-sm",
                                                 "bg-white text-black dark:bg-zinc-800 dark:text-white rounded-tl-none after:absolute after:-left-2 after:top-0 after:border-[8px] after:border-transparent after:border-t-white after:border-r-white dark:after:border-t-zinc-800 dark:after:border-r-zinc-800 after:content-['']"
