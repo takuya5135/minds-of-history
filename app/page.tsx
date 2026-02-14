@@ -252,7 +252,8 @@ export default function ChatPage() {
         setKarteText(data.karte)
         setIsKarteModalOpen(true)
       } else {
-        alert('カルテの作成に失敗しました。もう少し対話を重ねてからお試しください。')
+        const errorData = await response.json()
+        alert(`カルテの作成に失敗しました: ${errorData.error || '不明なエラー'}\nもう少し対話を重ねてからお試しください。`)
       }
     } catch (error) {
       console.error('Failed to create karte:', error)

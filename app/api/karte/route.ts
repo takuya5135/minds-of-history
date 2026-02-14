@@ -19,29 +19,31 @@ export async function POST(req: Request) {
         }
 
         // Fetch the conversation history for this character
-        const { data: chat } = await supabase
+        const { data: chat, error: chatError } = await supabase
             .from('chats')
             .select('id')
             .eq('user_id', user.id)
             .eq('character_id', characterId)
             .single()
 
-        if (!chat) {
+        if (chatError || !chat) {
+            console.error('Karte API: Chat not found for', { userId: user.id, characterId, chatError })
             return NextResponse.json({ error: 'Chat not found' }, { status: 404 })
         }
 
-        const { data: messages } = await supabase
+        const { data: messages, error: messagesError } = await supabase
             .from('messages')
             .select('role, content')
             .eq('chat_id', chat.id)
             .order('created_at', { ascending: true })
 
-        if (!messages || messages.length === 0) {
+        if (messagesError || !messages || messages.length === 0) {
+            console.error('Karte API: No messages found', { chatId: chat.id, messagesError })
             return NextResponse.json({ error: 'No messages to summarize' }, { status: 400 })
         }
 
         const genAI = new GoogleGenerativeAI(apiKey)
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
 
         const chatContent = messages
             .map((m) => `${m.role === 'user' ? '相談者' : '偉人'}: ${m.content}`)
