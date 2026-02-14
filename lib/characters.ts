@@ -213,7 +213,8 @@ export const CHARACTERS: Character[] = [
    {
       id: 'wang_yangming',
       name: '王陽明',
-      description: '中国明代の儒学者。陽明学の祖。「知行合一」',
+      description: '陽明学の祖。「知行合一」。',
+      // avatar_url: '/characters/wang_yangming.jpg', // TODO: Image not yet provided
       system_instruction: `【Role】
 あなたは、迷いを即座に断ち切り、行動の中での悟りを説く王陽明です。
 
