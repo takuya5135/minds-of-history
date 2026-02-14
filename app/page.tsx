@@ -6,7 +6,7 @@ import { MessageList } from '@/components/chat/MessageList'
 import { MessageInput } from '@/components/chat/MessageInput'
 import { CHARACTERS } from '@/lib/characters'
 import { Character, Message } from '@/types/chat'
-import { Menu, MoreHorizontal, Info, BookOpen, Save } from 'lucide-react'
+import { Menu, Send, Bot, User, Loader2, Save, Info, Trash2, FileText, X, Copy, Check } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 
@@ -37,6 +37,10 @@ export default function ChatPage() {
   const [savingWisdom, setSavingWisdom] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
+  const [isKarteModalOpen, setIsKarteModalOpen] = useState(false)
+  const [karteText, setKarteText] = useState('')
+  const [isGeneratingKarte, setIsGeneratingKarte] = useState(false)
+  const [isCopied, setIsCopied] = useState(false)
 
   const router = useRouter()
   const supabase = createClient()
@@ -210,6 +214,60 @@ export default function ChatPage() {
     }
   }
 
+  const handleDeleteAllHistory = async () => {
+    if (!confirm('全てのチャット記録を削除しますか？\nこの操作は取り消せません。')) return
+
+    try {
+      const response = await fetch('/api/chat', { method: 'DELETE' })
+      if (response.ok) {
+        setMessages([
+          {
+            id: 'welcome',
+            role: 'model',
+            content: `全ての履歴を削除しました。新しい対話を始めましょう。`,
+            created_at: new Date().toISOString()
+          }
+        ])
+        alert('全ての履歴を削除しました。')
+      } else {
+        alert('削除に失敗しました。')
+      }
+    } catch (error) {
+      console.error('Failed to delete history:', error)
+      alert('エラーが発生しました。')
+    }
+  }
+
+  const handleCreateKarte = async () => {
+    setIsGeneratingKarte(true)
+    try {
+      const response = await fetch('/api/karte', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ characterId: selectedCharId })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setKarteText(data.karte)
+        setIsKarteModalOpen(true)
+      } else {
+        alert('カルテの作成に失敗しました。もう少し対話を重ねてからお試しください。')
+      }
+    } catch (error) {
+      console.error('Failed to create karte:', error)
+      alert('エラーが発生しました。')
+    } finally {
+      setIsGeneratingKarte(false)
+    }
+  }
+
+  const handleCopyToClipboard = () => {
+    navigator.clipboard.writeText(karteText)
+    setIsCopied(true)
+    setTimeout(() => setIsCopied(false), 2000)
+  }
+
   if (!user) return null
 
   return (
@@ -237,8 +295,24 @@ export default function ChatPage() {
           </div>
           <div className="flex items-center gap-2">
             <button
+              onClick={handleCreateKarte}
+              disabled={isGeneratingKarte || messages.length <= 1}
+              className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-full disabled:opacity-50 transition-colors"
+              title="他の偉人に相談するためのカルテを作成"
+            >
+              {isGeneratingKarte ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <FileText className="h-4 w-4" />
+                  <span className="hidden lg:inline">カルテ作成</span>
+                </>
+              )}
+            </button>
+
+            <button
               onClick={handleFinishConversation}
-              disabled={savingWisdom || messages.length === 0}
+              disabled={savingWisdom || messages.length <= 1}
               className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               title="会話を終了して智慧の書に記録する"
             >
@@ -251,6 +325,15 @@ export default function ChatPage() {
                 </>
               )}
             </button>
+
+            <button
+              onClick={handleDeleteAllHistory}
+              className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full text-gray-400 hover:text-red-500 transition-colors"
+              title="全てのチャット履歴を削除"
+            >
+              <Trash2 className="h-5 w-5" />
+            </button>
+
             <button className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full" title={selectedChar.description}>
               <Info className="h-5 w-5 text-gray-500" />
             </button>
@@ -258,18 +341,70 @@ export default function ChatPage() {
         </header>
 
         {/* Chat Area */}
-        <MessageList
-          messages={messages}
-          character={selectedChar}
-          userAvatarUrl={profile?.avatar_url}
-          userName={profile?.username}
-        />
+        <div className="flex-1 overflow-hidden">
+          <MessageList
+            messages={messages}
+            character={selectedChar}
+            userAvatarUrl={profile?.avatar_url}
+            userName={profile?.username}
+          />
+        </div>
 
-        {/* Input Area */}
-        <div className="w-full bg-white dark:bg-zinc-950">
+        <div className="shrink-0 border-t bg-white dark:bg-zinc-950 p-4">
           <MessageInput onSend={handleSendMessage} disabled={loading} />
         </div>
       </div>
+
+      {/* Karte Modal */}
+      {isKarteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-lg bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-4 border-b dark:border-zinc-800">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                <h3 className="text-lg font-bold">偉人に渡すカルテ（要約）</h3>
+              </div>
+              <button onClick={() => setIsKarteModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                この要約をコピーして、他の偉人とのチャットに貼り付けることで、これまでの相談内容をスムーズに伝えることができます。
+              </p>
+              <div className="relative group">
+                <pre className="w-full p-4 rounded-xl bg-gray-50 dark:bg-black border dark:border-zinc-800 text-sm whitespace-pre-wrap leading-relaxed font-sans min-h-[150px]">
+                  {karteText}
+                </pre>
+                <button
+                  onClick={handleCopyToClipboard}
+                  className="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition-all shadow-lg active:scale-95"
+                >
+                  {isCopied ? (
+                    <>
+                      <Check className="h-3.5 w-3.5" />
+                      <span>コピー完了</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3.5 w-3.5" />
+                      <span>コピーする</span>
+                    </>
+                  )}
+                </button>
+              </div>
+              <div className="mt-6">
+                <button
+                  onClick={() => setIsKarteModalOpen(false)}
+                  className="w-full p-3 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-xl font-medium transition-colors"
+                >
+                  閉じる
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

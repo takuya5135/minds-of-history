@@ -242,3 +242,37 @@ ${userProfileInfo}
         )
     }
 }
+
+export async function DELETE(req: Request) {
+    try {
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
+        // Get all chat IDs for this user
+        const { data: chats } = await supabase
+            .from('chats')
+            .select('id')
+            .eq('user_id', user.id)
+
+        if (chats && chats.length > 0) {
+            const chatIds = chats.map(c => c.id)
+
+            // Delete all messages in these chats
+            const { error: deleteError } = await supabase
+                .from('messages')
+                .delete()
+                .in('chat_id', chatIds)
+
+            if (deleteError) throw deleteError
+        }
+
+        return NextResponse.json({ success: true })
+    } catch (error: any) {
+        console.error('Delete History Error:', error)
+        return NextResponse.json({ error: 'Failed to delete history' }, { status: 500 })
+    }
+}
