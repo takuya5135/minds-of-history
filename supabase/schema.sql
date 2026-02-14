@@ -60,6 +60,12 @@ create policy "Users can insert messages to own chats." on messages
     exists ( select 1 from chats where id = messages.chat_id and user_id = auth.uid() )
   );
 
+drop policy if exists "Users can delete messages of own chats." on messages;
+create policy "Users can delete messages of own chats." on messages
+  for delete using (
+    exists ( select 1 from chats where id = messages.chat_id and user_id = auth.uid() )
+  );
+
 -- 3. Wisdoms Table: Stores the summarized wisdom (Wisdom Book)
 create table if not exists wisdoms (
   id uuid default gen_random_uuid() primary key,

@@ -161,7 +161,7 @@ export default function ChatPage() {
     if (user) {
       loadHistory()
     }
-  }, [selectedCharId, user])
+  }, [selectedCharId, user, lastRefresh])
 
   const handleFinishConversation = async () => {
     if (!confirm('この会話を終了して「智慧の書」に記録しますか？\n現在のチャット履歴はリセットされます。')) return

@@ -121,14 +121,17 @@ ${conversationText}
 
         if (deleteError) {
             console.error('Clear Messages Error:', deleteError)
-            // Even if message deletion fails, we saved the wisdom, so we don't throw, but log it.
+            // We return success even if delete fails, but previously it might have been silent.
+            // Let's make it success true since wisdom is saved.
         }
 
         return NextResponse.json({ success: true })
 
     } catch (error: any) {
         console.error('Wisdom API POST Error:', error)
-        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 })
+        // Return a more descriptive error if it's a known error
+        const errorMessage = error instanceof Error ? error.message : '保存処理中に予期せぬエラーが発生しました。'
+        return NextResponse.json({ error: errorMessage }, { status: 500 })
     }
 }
 
