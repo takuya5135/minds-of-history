@@ -148,6 +148,12 @@ export async function POST(req: Request) {
 
         let systemInstruction = character.system_instruction + '\n' + userProfileInfo
 
+        // Inject current turn count if it's the concierge to help them follow the 2-4 turn rule
+        if (characterId === 'concierge') {
+            const turnCount = (history?.length || 0) / 2 + 1
+            systemInstruction += `\n【現在の対話状況】\n現在は相談者との対話の **${Math.floor(turnCount)}回目** の応酬です。\n2〜4回程度の深い対話を行ってから、偉人の紹介の是非を尋ねてください。`
+        }
+
         // Special handling for group chat
         if (characterId === 'group') {
             const concierge = CHARACTERS.find(c => c.id === 'concierge')
