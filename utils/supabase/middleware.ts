@@ -75,9 +75,6 @@ export async function updateSession(request: NextRequest) {
                     if (!isProfileSetupPage) {
                         return NextResponse.redirect(new URL('/profile/setup', request.url))
                     }
-                } else if (isProfileSetupPage) {
-                    // Redirect completed users away from setup page
-                    return NextResponse.redirect(new URL('/', request.url))
                 }
             }
         }
