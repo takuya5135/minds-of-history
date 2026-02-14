@@ -15,7 +15,7 @@ export interface Database {
                     username: string | null
                     avatar_url: string | null
                     is_approved: boolean | null
-                    age: number | null
+                    birthdate: string | null
                     occupation: string | null
                     gender: string | null
                     marital_status: string | null
@@ -27,7 +27,7 @@ export interface Database {
                     username?: string | null
                     avatar_url?: string | null
                     is_approved?: boolean | null
-                    age?: number | null
+                    birthdate?: string | null
                     occupation?: string | null
                     gender?: string | null
                     marital_status?: string | null
@@ -39,7 +39,7 @@ export interface Database {
                     username?: string | null
                     avatar_url?: string | null
                     is_approved?: boolean | null
-                    age?: number | null
+                    birthdate?: string | null
                     occupation?: string | null
                     gender?: string | null
                     marital_status?: string | null

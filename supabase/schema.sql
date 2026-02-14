@@ -4,7 +4,7 @@ create table profiles (
   username text unique,
   avatar_url text,
   is_approved boolean default false,
-  age integer,
+  birthdate date,
   occupation text,
   gender text,
   marital_status text,

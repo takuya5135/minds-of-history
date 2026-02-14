@@ -46,8 +46,8 @@ export async function updateSession(request: NextRequest) {
         const isWaitlistPage = request.nextUrl.pathname === '/waitlist'
 
         // Profile setup logic
-        // Check if mandatory fields are present. Using 'age' as a proxy for completion.
-        const isProfileCompleted = profile?.age !== null && profile?.age !== undefined
+        // Check if mandatory fields are present. Using 'birthdate' as a proxy for completion.
+        const isProfileCompleted = profile?.birthdate !== null && profile?.birthdate !== undefined
         const isProfileSetupPage = request.nextUrl.pathname === '/profile/setup'
 
         // Route types

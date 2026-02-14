@@ -36,10 +36,23 @@ export async function POST(req: Request) {
                 .single()
 
             if (profile) {
+                // Calculate age from birthdate
+                let ageString = '不明'
+                if (profile.birthdate) {
+                    const birthDate = new Date(profile.birthdate)
+                    const today = new Date()
+                    let age = today.getFullYear() - birthDate.getFullYear()
+                    const m = today.getMonth() - birthDate.getMonth()
+                    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                        age--
+                    }
+                    ageString = age + '歳'
+                }
+
                 userProfileInfo = `
 【相談者（ユーザー）情報】
 - 名前: ${profile.username || '不明'}
-- 年齢: ${profile.age ? profile.age + '歳' : '不明'}
+- 年齢: ${ageString}
 - 職業: ${profile.occupation || '不明'}
 - 性別: ${profile.gender || '不明'}
 - 配偶者: ${profile.marital_status || '不明'}

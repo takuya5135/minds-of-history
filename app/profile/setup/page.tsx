@@ -12,7 +12,7 @@ export default function ProfileSetupPage() {
 
     const [formData, setFormData] = useState({
         username: '',
-        age: '',
+        birthdate: '',
         occupation: '',
         gender: '',
         marital_status: '',
@@ -37,7 +37,7 @@ export default function ProfileSetupPage() {
             .from('profiles')
             .update({
                 username: formData.username,
-                age: parseInt(formData.age, 10),
+                birthdate: formData.birthdate,
                 occupation: formData.occupation,
                 gender: formData.gender,
                 marital_status: formData.marital_status,
@@ -96,17 +96,15 @@ export default function ProfileSetupPage() {
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label htmlFor="age" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    年齢 <span className="text-red-500">*</span>
+                                <label htmlFor="birthdate" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    生年月日 <span className="text-red-500">*</span>
                                 </label>
                                 <input
-                                    id="age"
-                                    name="age"
-                                    type="number"
+                                    id="birthdate"
+                                    name="birthdate"
+                                    type="date"
                                     required
-                                    min="0"
-                                    max="150"
-                                    value={formData.age}
+                                    value={formData.birthdate}
                                     onChange={handleChange}
                                     className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-gray-500"
                                 />
