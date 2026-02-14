@@ -14,11 +14,16 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        // 1. Fetch all chats for the user and their messages
-        const { data: userChats } = await supabase
+        // 1. Fetch all chats for the user
+        const { data: userChats, error: chatsError } = await supabase
             .from('chats')
             .select('id, character_id')
             .eq('user_id', user.id)
+
+        if (chatsError) {
+            console.error('Fetch Chats Error:', chatsError)
+            throw new Error(`Failed to fetch chats: ${chatsError.message}`)
+        }
 
         if (!userChats || userChats.length === 0) {
             return NextResponse.json({ error: 'Chat not found' }, { status: 404 })
@@ -26,10 +31,10 @@ export async function POST(req: Request) {
 
         const chatIds = userChats.map(c => c.id)
 
-        // 2. Fetch all messages across these chats ordered chronologically
+        // 2. Fetch all messages across these chats
         const { data: messages, error: msgError } = await supabase
             .from('messages')
-            .select('role, content, created_at, chat_id, chats!inner(character_id)')
+            .select('*')
             .in('chat_id', chatIds)
             .order('created_at', { ascending: true })
 
@@ -52,16 +57,17 @@ export async function POST(req: Request) {
         const character = CHARACTERS.find(c => c.id === characterId)
         const characterName = character ? character.name : '偉人'
 
-        // Construct a comprehensive log
+        // Construct a comprehensive log using locally fetched chat info
         const conversationText = messages.map(m => {
-            const charId = (m.chats as any)?.character_id
-            const chatChar = CHARACTERS.find(c => c.id === charId)
+            const chatObj = userChats.find(c => c.id === m.chat_id)
+            const resolvedCharId = chatObj?.character_id
+            const chatChar = CHARACTERS.find(c => c.id === resolvedCharId)
             const name = m.role === 'user' ? '相談者' : (chatChar?.name || '偉人')
             return `${name}: ${m.content}`
         }).join('\n')
 
         const genAI = new GoogleGenerativeAI(apiKey)
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' })
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
 
         const prompt = `
 あなたは数々の偉人の知恵を編纂する書記官です。
