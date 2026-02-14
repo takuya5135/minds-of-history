@@ -76,5 +76,6 @@ export function Sidebar({ characters, selectedId, onSelect, isOpen, onClose }: S
                     </a>
                 </div>
             </div>
-            )
+        </>
+    )
 }
