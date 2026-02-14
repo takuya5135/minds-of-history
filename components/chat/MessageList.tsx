@@ -25,7 +25,7 @@ export function MessageList({ messages, character }: MessageListProps) {
     }, [messages])
 
     return (
-        <div className="flex-1 overflow-y-auto p-4 pt-8 space-y-4 bg-[#7494C0] dark:bg-zinc-900">
+        <div className="flex-1 overflow-y-auto p-4 pt-12 space-y-4 bg-[#7494C0] dark:bg-zinc-900">
             {messages.map((message, index) => {
                 const isUser = message.role === 'user'
 
