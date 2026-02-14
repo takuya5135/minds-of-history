@@ -208,9 +208,9 @@ export default function ChatPage() {
         onClose={() => setSidebarOpen(false)}
       />
 
-      <div className="flex flex-1 flex-col h-full w-full relative">
+      <div className="flex flex-1 flex-col relative bg-white dark:bg-zinc-950 overflow-hidden">
         {/* Header */}
-        <header className="flex h-16 items-center justify-between border-b bg-white dark:bg-zinc-950 px-4 shadow-sm z-20 sticky top-0">
+        <header className="flex h-16 shrink-0 items-center justify-between border-b bg-white dark:bg-zinc-950 px-4 shadow-sm z-20">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -223,7 +223,7 @@ export default function ChatPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={handleFinishConversation}
-              disabled={savingWisdom || messages.length <= 1}
+              disabled={savingWisdom || messages.length === 0}
               className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               title="会話を終了して智慧の書に記録する"
             >

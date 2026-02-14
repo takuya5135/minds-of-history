@@ -5,7 +5,7 @@ import { CHARACTERS } from '@/lib/characters'
 
 export async function POST(req: Request) {
     try {
-        const { characterId } = await req.json()
+        const { characterId } = await req.json() // Representative character
 
         const supabase = await createClient()
         const { data: { user } } = await supabase.auth.getUser()
@@ -14,24 +14,26 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        // 1. Get Chat ID
-        const { data: chat } = await supabase
+        // 1. Fetch all chats for the user and their messages
+        const { data: userChats } = await supabase
             .from('chats')
-            .select('id')
+            .select('id, character_id')
             .eq('user_id', user.id)
-            .eq('character_id', characterId)
-            .single()
 
-        if (!chat) {
+        if (!userChats || userChats.length === 0) {
             return NextResponse.json({ error: 'Chat not found' }, { status: 404 })
         }
 
-        // 2. Fetch Messages
-        const { data: messages } = await supabase
+        const chatIds = userChats.map(c => c.id)
+
+        // 2. Fetch all messages across these chats ordered chronologically
+        const { data: messages, error: msgError } = await supabase
             .from('messages')
-            .select('*')
-            .eq('chat_id', chat.id)
+            .select('*, chats(character_id)')
+            .in('chat_id', chatIds)
             .order('created_at', { ascending: true })
+
+        if (msgError) throw msgError
 
         if (!messages || messages.length === 0) {
             return NextResponse.json({ error: 'No messages to summarize' }, { status: 400 })
@@ -46,26 +48,34 @@ export async function POST(req: Request) {
         const character = CHARACTERS.find(c => c.id === characterId)
         const characterName = character ? character.name : '偉人'
 
-        const conversationText = messages.map(m => `${m.role === 'user' ? '相談者' : characterName}: ${m.content}`).join('\n')
+        // Construct a comprehensive log
+        const conversationText = messages.map(m => {
+            const charId = (m.chats as any)?.character_id
+            const chatChar = CHARACTERS.find(c => c.id === charId)
+            const name = m.role === 'user' ? '相談者' : (chatChar?.name || '偉人')
+            return `${name}: ${m.content}`
+        }).join('\n')
 
         const genAI = new GoogleGenerativeAI(apiKey)
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' }) // Using Pro for better summarization of multi-turn logic
 
         const prompt = `
-以下の対話ログは、相談者と${characterName}との対話です。
-この対話から得られた「智慧」を、後で見返せるように要約してください。
+あなたは数々の偉人の知恵を編纂する書記官です。
+以下の対話ログは、相談者がコンシェルジュや偉人たちと行った一連の対話記録です。
+この対話全体を貫く「智慧」を、後で見返せるように要約してください。
+特に、偉人たちがどのような解決策や視点を示したかを重視してください。
 
 【出力フォーマット（Markdown）】
-# [タイトル：相談内容を一言で]
+# [タイトル：相談内容から導き出された智慧の主題]
 
 ## 💡 相談の核心
-（相談者が抱えていた本質的な悩みや課題を簡潔に）
+（相談者が抱えていた本質的な悩みや課題を、一連の対話を踏まえて簡潔に）
 
-## 🗝️ ${characterName}の教え
-（偉人が提示した視点、哲学、アドバイスの要点）
+## 🗝️ 偉人たちの教え
+（対話に登場した各偉人が提示した視点、哲学、アドバイスの要点。誰が何を言ったか明確にすること）
 
 ## 🚀 明日へのアクション
-（相談者が実行すべきこと、持ち帰るべき心のあり方）
+（対話を通じて相談者が実行すべきこと、持ち帰るべき心のあり方）
 
 ---
 【対話ログ】
@@ -75,7 +85,6 @@ ${conversationText}
         const result = await model.generateContent(prompt)
         const summary = result.response.text()
 
-        // Extract title (first line usually) or generate a generic one
         const titleMatch = summary.match(/^#\s*(.+)$/m)
         const title = titleMatch ? titleMatch[1] : `${characterName}との対話`
 
@@ -91,12 +100,11 @@ ${conversationText}
 
         if (insertError) throw insertError
 
-        // 5. Clear Messages (Archive/Delete)
-        // We delete messages to "finish" the conversation and free up the chat for a new topic
+        // 5. Clear ALL summarized messages and cleanup chats
         await supabase
             .from('messages')
             .delete()
-            .eq('chat_id', chat.id)
+            .in('chat_id', chatIds)
 
         return NextResponse.json({ success: true })
 

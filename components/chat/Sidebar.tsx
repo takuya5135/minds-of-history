@@ -25,7 +25,7 @@ export function Sidebar({ characters, selectedId, onSelect, isOpen, onClose }: S
                 "fixed inset-y-0 left-0 z-30 w-72 transform bg-white dark:bg-zinc-950 border-r dark:border-zinc-800 transition-transform duration-200 md:relative md:translate-x-0",
                 isOpen ? "translate-x-0" : "-translate-x-full"
             )}>
-                <div className="flex h-16 items-center justify-between px-4 border-b dark:border-zinc-800">
+                <div className="flex h-16 shrink-0 items-center justify-between px-4 border-b dark:border-zinc-800">
                     <h2 className="text-lg font-bold">偉人リスト</h2>
                     <button onClick={onClose} className="md:hidden p-2">
                         <ChevronLeft className="h-5 w-5" />
