@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react'
 import { Message, Character } from '@/types/chat'
+import { CHARACTERS } from '@/lib/characters'
 import { cn } from '@/lib/utils'
 import { User, Bot } from 'lucide-react'
 
@@ -19,6 +20,60 @@ export function MessageList({ messages, character }: MessageListProps) {
         <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#7494C0] dark:bg-zinc-900">
             {messages.map((message) => {
                 const isUser = message.role === 'user'
+
+                // Group Chat: Split message by [Name] tags
+                // Pattern: [Name]\nContent...
+                // We need to capture the name and the content following it
+                const parts = []
+                if (!isUser && character.id === 'group') {
+                    const regex = /\[(.*?)\]\n([\s\S]*?)(?=\n\[|$)/g
+                    let match
+                    while ((match = regex.exec(message.content)) !== null) {
+                        parts.push({
+                            name: match[1],
+                            content: match[2].trim()
+                        })
+                    }
+                }
+
+                if (parts.length > 0) {
+                    // Render split messages for group chat
+                    return (
+                        <div key={message.id} className="flex flex-col gap-4">
+                            {parts.map((part, index) => {
+                                // Find character for avatar
+                                const matchedCharacter = CHARACTERS.find(c => c.name === part.name || c.id === part.name)
+                                const avatarUrl = matchedCharacter?.avatar_url
+
+                                return (
+                                    <div key={`${message.id}-${index}`} className="flex w-full items-start gap-2 justify-start">
+                                        <div className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-full bg-white dark:bg-zinc-800 border overflow-hidden">
+                                            {avatarUrl ? (
+                                                <img src={avatarUrl} alt={part.name} className="h-full w-full rounded-full object-cover" />
+                                            ) : (
+                                                <div className="text-[10px] font-bold text-center leading-none px-1 text-gray-600 dark:text-gray-300">
+                                                    {part.name.substring(0, 2)}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="flex flex-col max-w-[80%]">
+                                            <span className="text-xs text-gray-500 ml-1 mb-1">{part.name}</span>
+                                            <div className={cn(
+                                                "relative rounded-2xl px-4 py-2 text-sm shadow-sm",
+                                                "bg-white text-black dark:bg-zinc-800 dark:text-white rounded-tl-none after:absolute after:-left-2 after:top-0 after:border-[8px] after:border-transparent after:border-t-white after:border-r-white dark:after:border-t-zinc-800 dark:after:border-r-zinc-800 after:content-['']"
+                                            )}>
+                                                <div className="whitespace-pre-wrap">{part.content}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )
+                }
+
+                // Normal rendering for user or non-group messages
                 return (
                     <div
                         key={message.id}
