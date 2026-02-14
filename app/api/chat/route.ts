@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { NextResponse } from 'next/server'
 import { CHARACTERS } from '@/lib/characters'
+import { createClient } from '@/utils/supabase/server'
 
 export async function POST(req: Request) {
     try {
@@ -22,7 +23,34 @@ export async function POST(req: Request) {
             )
         }
 
-        let systemInstruction = character.system_instruction
+        // Fetch user profile
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        let userProfileInfo = ''
+        if (user) {
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .single()
+
+            if (profile) {
+                userProfileInfo = `
+【相談者（ユーザー）情報】
+- 名前: ${profile.username || '不明'}
+- 年齢: ${profile.age ? profile.age + '歳' : '不明'}
+- 職業: ${profile.occupation || '不明'}
+- 性別: ${profile.gender || '不明'}
+- 配偶者: ${profile.marital_status || '不明'}
+- 子供の数: ${profile.children_count !== null ? profile.children_count + '人' : '不明'}
+
+この相談者情報（特に年齢、職業、家族構成）を考慮し、相手の立場や状況に寄り添った対話を行ってください。
+`
+            }
+        }
+
+        let systemInstruction = character.system_instruction + '\n' + userProfileInfo
 
         // Special handling for group chat
         if (characterId === 'group') {
@@ -36,11 +64,13 @@ export async function POST(req: Request) {
 `).join('\n')
 
             systemInstruction = `
-あなたは「賢者の円卓」の進行役兼、全偉人の知識を持つAIです。
+你是「賢者の円卓」の進行役兼、全偉人の知識を持つAIです。
 ユーザーの問いかけに対して、以下の偉人たちの中から最も適切と思われる1名〜3名を選出し、それぞれの偉人になりきって発言させてください。
 
 【参加している偉人リスト】
 ${participantsInfo}
+
+${userProfileInfo}
 
 【重要：応答フォーマット】
 発言する偉人の名前を角括弧で囲み、改行してから発言内容を記述してください。複数の偉人が発言する場合は、空行を挟んで続けてください。

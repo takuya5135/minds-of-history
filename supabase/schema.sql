@@ -4,6 +4,11 @@ create table profiles (
   username text unique,
   avatar_url text,
   is_approved boolean default false,
+  age integer,
+  occupation text,
+  gender text,
+  marital_status text,
+  children_count integer default 0,
   updated_at timestamp with time zone,
 
   constraint username_length check (char_length(username) >= 3)
