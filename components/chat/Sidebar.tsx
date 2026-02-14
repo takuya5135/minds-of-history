@@ -3,7 +3,7 @@
 import { Character } from '@/types/chat'
 import { cn } from '@/lib/utils'
 import { Bot, ChevronLeft } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 interface SidebarProps {
     characters: Character[]
@@ -18,7 +18,6 @@ interface SidebarProps {
 }
 
 export function Sidebar({ characters, selectedId, onSelect, isOpen, onClose, userProfile }: SidebarProps) {
-    const router = useRouter()
     return (
         <>
             {/* Mobile overlay */}
@@ -74,11 +73,9 @@ export function Sidebar({ characters, selectedId, onSelect, isOpen, onClose, use
                 </div>
                 <div className="mt-auto border-t dark:border-zinc-800 p-2 space-y-1">
                     {userProfile && (
-                        <button
-                            onClick={() => {
-                                router.push('/profile/setup')
-                                onClose()
-                            }}
+                        <Link
+                            href="/profile/setup"
+                            onClick={onClose}
                             className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-zinc-900 transition-colors group"
                             title="プロフィールを編集"
                         >
@@ -93,7 +90,7 @@ export function Sidebar({ characters, selectedId, onSelect, isOpen, onClose, use
                                 <div className="font-medium truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400">{userProfile.username}</div>
                                 <div className="text-[10px] text-gray-500 dark:text-gray-400">相談者 (設定変更)</div>
                             </div>
-                        </button>
+                        </Link>
                     )}
 
                     <div className="px-3 py-1 mb-2">
@@ -103,7 +100,11 @@ export function Sidebar({ characters, selectedId, onSelect, isOpen, onClose, use
                         </p>
                     </div>
 
-                    <a href="/wisdom" className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-gray-100 dark:hover:bg-zinc-900 text-indigo-600 dark:text-indigo-400">
+                    <Link
+                        href="/wisdom"
+                        onClick={onClose}
+                        className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-gray-100 dark:hover:bg-zinc-900 text-indigo-600 dark:text-indigo-400"
+                    >
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-50 dark:bg-indigo-900/20">
                             <Bot className="h-5 w-5" />
                         </div>
@@ -111,7 +112,7 @@ export function Sidebar({ characters, selectedId, onSelect, isOpen, onClose, use
                             <div className="font-medium">智慧の書</div>
                             <div className="text-xs text-gray-500 dark:text-gray-400">要約と記録</div>
                         </div>
-                    </a>
+                    </Link>
                 </div>
             </div>
         </>
