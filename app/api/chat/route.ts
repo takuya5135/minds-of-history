@@ -203,7 +203,7 @@ ${userProfileInfo}
 
         const genAI = new GoogleGenerativeAI(apiKey)
         const model = genAI.getGenerativeModel({
-            model: characterId === 'group' ? 'gemini-1.5-pro' : 'gemini-2.0-flash', // Using 2.0 Flash for speed/cost, or use gemini-1.5-pro
+            model: 'gemini-2.0-flash',
             systemInstruction: systemInstruction
         })
 
@@ -220,27 +220,34 @@ ${userProfileInfo}
 
         // 2. Save Model Response
         // For group chat, we split the response into separate messages per character
-        let messageParts = [text]
+        let messageParts: string[] = []
         if (characterId === 'group') {
-            const regex = /\[(.*?)\]\n([\s\S]*?)(?=\n\[|$)/g
-            const parts = []
+            // More robust regex: handle optional spaces and different newline characters
+            const regex = /\[([^\]]+)\]\s*?\n?([\s\S]*?)(?=\s*?\n?\[|$)/g
             let match
             while ((match = regex.exec(text)) !== null) {
-                parts.push(match[0].trim())
+                const fullMatch = match[0].trim()
+                if (fullMatch) {
+                    messageParts.push(fullMatch)
+                }
             }
-            if (parts.length > 0) {
-                messageParts = parts
-            }
+        }
+
+        // Fallback: if splitting failed or not a group chat, save as one
+        if (messageParts.length === 0) {
+            messageParts = [text]
         }
 
         const savedMessages = []
         for (const part of messageParts) {
+            if (!part.trim()) continue;
+
             const { data: savedMsg, error: insertError } = await supabase
                 .from('messages')
                 .insert({
                     chat_id: chatId,
                     role: 'model',
-                    content: part
+                    content: part.trim()
                 })
                 .select()
                 .single()

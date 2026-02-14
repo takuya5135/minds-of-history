@@ -71,6 +71,8 @@ export default function ChatPage() {
   const selectedChar = CHARACTERS.find(c => c.id === selectedCharId) || CHARACTERS[0]
 
   const handleSendMessage = async (content: string) => {
+    if (loading || !content.trim()) return
+
     const newMessage: Message = {
       id: crypto.randomUUID(),
       role: 'user',
@@ -84,10 +86,9 @@ export default function ChatPage() {
     setLoading(true)
 
     try {
-      // Filter out the welcome message if it exists (id: 'welcome') as it's not part of the conversation history for the API usually
+      // Filter out only the welcome message
       const history = updatedMessages
         .filter(m => m.id !== 'welcome')
-        // Exclude the current message from history because we send it as 'message'
         .slice(0, -1)
 
       const response = await fetchWithRetry('/api/chat', {
@@ -104,8 +105,8 @@ export default function ChatPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        console.error('API Error Details:', errorData)
-        throw new Error(errorData.error || `API request failed with status ${response.status}`)
+        console.error('API Error Details:', { status: response.status, data: errorData })
+        throw new Error(errorData.error || `APIエラー (${response.status})`)
       }
 
       const data = await response.json()
@@ -119,11 +120,11 @@ export default function ChatPage() {
           } else {
             // Keep loading true while waiting for the next part
             setLoading(true)
-            await new Promise(resolve => setTimeout(resolve, i === 1 ? 1500 : 2500))
+            await new Promise(resolve => setTimeout(resolve, i === 1 ? 1200 : 2000))
             setMessages(prev => [...prev, msg])
           }
         }
-      } else {
+      } else if (data.text) {
         const botResponse: Message = {
           id: crypto.randomUUID(),
           role: 'model',
@@ -135,7 +136,7 @@ export default function ChatPage() {
     } catch (error: any) {
       console.error('Failed to send message:', error)
 
-      let errorMessage = 'すみません、エラーが発生しました。もう一度お話しいただけますか？'
+      let errorMessage = `すみません、エラーが発生しました: ${error.message}`
       if (error.message.includes('504') || error.message.includes('timeout')) {
         errorMessage = '考え込んでしまってタイムアウトしました。もう一度聞いてみてください。'
       } else if (error.message.includes('429')) {
