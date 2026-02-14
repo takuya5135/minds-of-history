@@ -4,6 +4,14 @@ import { CHARACTERS } from '@/lib/characters'
 import { cn } from '@/lib/utils'
 import { User, Bot } from 'lucide-react'
 
+// Simple fade-in animation style
+const fadeInStyle = `
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+`
+
 interface MessageListProps {
     messages: Message[]
     character: Character
@@ -18,7 +26,7 @@ export function MessageList({ messages, character }: MessageListProps) {
 
     return (
         <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#7494C0] dark:bg-zinc-900">
-            {messages.map((message) => {
+            {messages.map((message, index) => {
                 const isUser = message.role === 'user'
 
                 // Group Chat: Split message by [Name] tags
@@ -38,15 +46,31 @@ export function MessageList({ messages, character }: MessageListProps) {
 
                 if (parts.length > 0) {
                     // Render split messages for group chat
+                    // Check if this is the very last message in the entire chat history
+                    const isLastMessage = index === messages.length - 1
+
                     return (
                         <div key={message.id} className="flex flex-col gap-4">
-                            {parts.map((part, index) => {
+                            <style>{fadeInStyle}</style>
+                            {parts.map((part, partIndex) => {
                                 // Find character for avatar
                                 const matchedCharacter = CHARACTERS.find(c => c.name === part.name || c.id === part.name)
                                 const avatarUrl = matchedCharacter?.avatar_url
 
+                                // Apply delay only if it's the last message context and it's not the first part (Concierge)
+                                // Delay logic: 2nd part (index 1) gets ~2.5s delay
+                                const shouldDelay = isLastMessage && partIndex > 0
+                                const animationStyle = shouldDelay ? {
+                                    opacity: 0,
+                                    animation: `fadeIn 0.8s ease-out ${2.5 * partIndex}s forwards`
+                                } : {}
+
                                 return (
-                                    <div key={`${message.id}-${index}`} className="flex w-full items-start gap-2 justify-start">
+                                    <div
+                                        key={`${message.id}-${partIndex}`}
+                                        className="flex w-full items-start gap-2 justify-start"
+                                        style={animationStyle}
+                                    >
                                         <div className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-full bg-white dark:bg-zinc-800 border overflow-hidden">
                                             {avatarUrl ? (
                                                 <img src={avatarUrl} alt={part.name} className="h-full w-full rounded-full object-cover" />
