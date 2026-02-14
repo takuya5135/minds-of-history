@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { Bot } from 'lucide-react'
@@ -19,6 +19,33 @@ export default function ProfileSetupPage() {
         children_count: '0',
         avatar_url: '/avatars/human_1.png', // Default
     })
+
+    useEffect(() => {
+        const loadProfile = async () => {
+            const supabase = createClient()
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single()
+
+                if (profile) {
+                    setFormData({
+                        username: profile.username || '',
+                        birthdate: profile.birthdate || '',
+                        occupation: profile.occupation || '',
+                        gender: profile.gender || '',
+                        marital_status: profile.marital_status || '',
+                        children_count: String(profile.children_count || 0),
+                        avatar_url: profile.avatar_url || '/avatars/human_1.png',
+                    })
+                }
+            }
+        }
+        loadProfile()
+    }, [])
 
     const humanAvatars = Array.from({ length: 8 }, (_, i) => `/avatars/human_${i + 1}.png`)
     const animalAvatars = Array.from({ length: 8 }, (_, i) => `/avatars/animal_${i + 1}.png`)
@@ -102,8 +129,8 @@ export default function ProfileSetupPage() {
                                             type="button"
                                             onClick={() => selectAvatar(url)}
                                             className={`relative aspect-square rounded-full overflow-hidden border-2 transition-all ${formData.avatar_url === url
-                                                    ? 'border-indigo-600 ring-2 ring-indigo-600 ring-offset-2'
-                                                    : 'border-transparent grayscale hover:grayscale-0'
+                                                ? 'border-indigo-600 ring-2 ring-indigo-600 ring-offset-2'
+                                                : 'border-transparent grayscale hover:grayscale-0'
                                                 }`}
                                         >
                                             <img src={url} alt="avatar" className="w-full h-full object-cover" />
@@ -121,8 +148,8 @@ export default function ProfileSetupPage() {
                                             type="button"
                                             onClick={() => selectAvatar(url)}
                                             className={`relative aspect-square rounded-full overflow-hidden border-2 transition-all ${formData.avatar_url === url
-                                                    ? 'border-indigo-600 ring-2 ring-indigo-600 ring-offset-2'
-                                                    : 'border-transparent grayscale hover:grayscale-0'
+                                                ? 'border-indigo-600 ring-2 ring-indigo-600 ring-offset-2'
+                                                : 'border-transparent grayscale hover:grayscale-0'
                                                 }`}
                                         >
                                             <img src={url} alt="avatar" className="w-full h-full object-cover" />

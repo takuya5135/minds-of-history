@@ -49,6 +49,12 @@ export default function WisdomPage() {
                     <BookOpen className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
                     <h1 className="text-3xl font-bold text-serif">智慧の書</h1>
                 </div>
+                <div className="mt-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800/50 rounded-lg p-3">
+                    <p className="text-xs text-orange-700 dark:text-orange-300">
+                        ※ 記録は保存から<strong>10日後</strong>に自動的に消去されます。
+                        大切な記録はPDFの保存機能などをご利用ください。
+                    </p>
+                </div>
             </header>
 
             <main className="max-w-4xl mx-auto space-y-8">
