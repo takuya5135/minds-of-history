@@ -208,7 +208,7 @@ export default function ChatPage() {
         onClose={() => setSidebarOpen(false)}
       />
 
-      <div className="flex flex-1 flex-col relative bg-white dark:bg-zinc-950 overflow-hidden">
+      <div className="flex flex-1 flex-col h-full relative bg-white dark:bg-zinc-950 overflow-hidden">
         {/* Header */}
         <header className="flex h-16 shrink-0 items-center justify-between border-b bg-white dark:bg-zinc-950 px-4 shadow-sm z-20">
           <div className="flex items-center gap-3">

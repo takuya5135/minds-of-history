@@ -22,7 +22,7 @@ export function Sidebar({ characters, selectedId, onSelect, isOpen, onClose }: S
             )}
 
             <div className={cn(
-                "fixed inset-y-0 left-0 z-30 w-72 transform bg-white dark:bg-zinc-950 border-r dark:border-zinc-800 transition-transform duration-200 md:relative md:translate-x-0",
+                "fixed inset-y-0 left-0 z-30 w-72 transform bg-white dark:bg-zinc-950 border-r dark:border-zinc-800 transition-transform duration-200 md:relative md:translate-x-0 h-full flex flex-col",
                 isOpen ? "translate-x-0" : "-translate-x-full"
             )}>
                 <div className="flex h-16 shrink-0 items-center justify-between px-4 border-b dark:border-zinc-800">
@@ -32,7 +32,7 @@ export function Sidebar({ characters, selectedId, onSelect, isOpen, onClose }: S
                     </button>
                 </div>
 
-                <div className="overflow-y-auto h-[calc(100vh-4rem)] p-2 space-y-1">
+                <div className="overflow-y-auto flex-1 p-2 space-y-1">
                     {characters.map((char) => {
                         const isSelected = selectedId === char.id;
                         return (
