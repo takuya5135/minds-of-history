@@ -110,13 +110,28 @@ export default function ChatPage() {
 
       const data = await response.json()
 
-      const botResponse: Message = {
-        id: crypto.randomUUID(),
-        role: 'model',
-        content: data.text,
-        created_at: new Date().toISOString(),
+      if (data.messages && Array.isArray(data.messages)) {
+        // Sequentially add messages with a delay
+        for (let i = 0; i < data.messages.length; i++) {
+          const msg = data.messages[i]
+          if (i === 0) {
+            setMessages(prev => [...prev, msg])
+          } else {
+            // Keep loading true while waiting for the next part
+            setLoading(true)
+            await new Promise(resolve => setTimeout(resolve, i === 1 ? 1500 : 2500))
+            setMessages(prev => [...prev, msg])
+          }
+        }
+      } else {
+        const botResponse: Message = {
+          id: crypto.randomUUID(),
+          role: 'model',
+          content: data.text,
+          created_at: new Date().toISOString(),
+        }
+        setMessages(prev => [...prev, botResponse])
       }
-      setMessages(prev => [...prev, botResponse])
     } catch (error: any) {
       console.error('Failed to send message:', error)
 

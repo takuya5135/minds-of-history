@@ -172,11 +172,12 @@ ${concierge?.system_instruction || ''}
 【賢者の円卓 進行ルール（絶対遵守）】
 1. 進行役: あなたは「コンシェルジュ」として振る舞い、対話の口火を切りなさい。
 2. 発言順序:
-   ステップ1: [コンシェルジュ]として、ユーザーの悩みを分析し、最も適した偉人を「1名」指名する。
-   ステップ2: 【間髪入れずに】、その指名された[偉人名]として回答を出力する。
+   **1回の回答（出力）の中に、必ず以下の2つのセクションを両方含めてください。**
    
-   ※悪い例：コンシェルジュが指名して終了している。
-   ※良い例：コンシェルジュが指名し、直後の行でその偉人が喋っている。
+   セクション1: [コンシェルジュ]として、ユーザーの悩みを分析し、最も適した偉人を「1名」具体的に指名する。
+   セクション2: その直後に、指名された[偉人名]になりきって、深みのある回答を出力する。
+   
+   ※「コンシェルジュが指名して終わり」にするのは絶対に禁止です。必ずその後に偉人の発言を続けてください。
 
 3. 禁止事項:
    - コンシェルジュの指名なしに、偉人が勝手に発言すること。
@@ -191,26 +192,18 @@ ${participantsInfo}
 
 ${userProfileInfo}
 
-【重要：出力フォーマット（必ずこの通りに出力せよ）】
+【重要：出力フォーマット（必ず一つの回答内にこれらを記述せよ）】
 [コンシェルジュ]
-（分析と指名 ※「それでは〇〇さん、お願いします」等で結ぶ）
+（分析した上で「それでは、〇〇さん、お願いします」等で指名）
 
 [指名された偉人名]
-（回答 ※コンシェルジュの指名を受けて即座に話し始めること）
-
-[コンシェルジュ]
-（次の指名 ※必要な場合のみ）
-
-[次の偉人名]
-（回答）
+（指名された偉人として、知恵を授ける回答を行う）
 `
         }
 
-
-
         const genAI = new GoogleGenerativeAI(apiKey)
         const model = genAI.getGenerativeModel({
-            model: 'gemini-2.0-flash', // Using 2.0 Flash for speed/cost, or use gemini-1.5-pro
+            model: characterId === 'group' ? 'gemini-1.5-pro' : 'gemini-2.0-flash', // Using 2.0 Flash for speed/cost, or use gemini-1.5-pro
             systemInstruction: systemInstruction
         })
 
@@ -226,13 +219,40 @@ ${userProfileInfo}
         const text = response.text()
 
         // 2. Save Model Response
-        await supabase.from('messages').insert({
-            chat_id: chatId,
-            role: 'model',
-            content: text
-        })
+        // For group chat, we split the response into separate messages per character
+        let messageParts = [text]
+        if (characterId === 'group') {
+            const regex = /\[(.*?)\]\n([\s\S]*?)(?=\n\[|$)/g
+            const parts = []
+            let match
+            while ((match = regex.exec(text)) !== null) {
+                parts.push(match[0].trim())
+            }
+            if (parts.length > 0) {
+                messageParts = parts
+            }
+        }
 
-        return NextResponse.json({ text })
+        const savedMessages = []
+        for (const part of messageParts) {
+            const { data: savedMsg, error: insertError } = await supabase
+                .from('messages')
+                .insert({
+                    chat_id: chatId,
+                    role: 'model',
+                    content: part
+                })
+                .select()
+                .single()
+
+            if (insertError) throw insertError
+            savedMessages.push(savedMsg)
+        }
+
+        return NextResponse.json({
+            text, // Keep for backward compatibility if needed
+            messages: savedMessages
+        })
     } catch (error: any) {
         console.error('Chat API Error:', error)
 
