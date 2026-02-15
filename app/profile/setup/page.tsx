@@ -5,10 +5,33 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { Bot } from 'lucide-react'
 
+const OCCUPATION_OPTIONS = [
+    "公務員",
+    "会社員（一般事務・管理）",
+    "会社員（技術・開発）",
+    "会社員（営業・マーケティング）",
+    "会社員（企画・専門職）",
+    "経営者・役員",
+    "自営業・フリーランス",
+    "専門職（医師・弁護士等）",
+    "教育・研究職",
+    "医療・福祉・介護",
+    "運輸・配送・物流",
+    "サービス・飲食・小売",
+    "建設・土木・農林水産",
+    "製造・生産工程",
+    "学生",
+    "主婦・主夫",
+    "パート・アルバイト",
+    "無職・家政手伝い",
+    "その他"
+]
+
 export default function ProfileSetupPage() {
     const router = useRouter()
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [isCustomOccupation, setIsCustomOccupation] = useState(false)
 
     const [formData, setFormData] = useState({
         username: '',
@@ -32,7 +55,7 @@ export default function ProfileSetupPage() {
                     .single()
 
                 if (profile) {
-                    setFormData({
+                    const initialData = {
                         username: profile.username || '',
                         birthdate: profile.birthdate || '',
                         occupation: profile.occupation || '',
@@ -40,12 +63,21 @@ export default function ProfileSetupPage() {
                         marital_status: profile.marital_status || '',
                         children_count: String(profile.children_count || 0),
                         avatar_url: profile.avatar_url || '/avatars/human_1.png',
-                    })
+                    }
+
+                    // Custom occupation check
+                    if (profile.occupation && !OCCUPATION_OPTIONS.includes(profile.occupation)) {
+                        setIsCustomOccupation(true)
+                    } else if (profile.occupation === 'その他') {
+                        setIsCustomOccupation(true)
+                        initialData.occupation = ''
+                    }
+
+                    setFormData(initialData)
                 }
             }
-        }
-        loadProfile()
-    }, [])
+            loadProfile()
+        }, [])
 
     const humanAvatars = Array.from({ length: 8 }, (_, i) => `/avatars/human_${i + 1}.png`)
     const animalAvatars = Array.from({ length: 8 }, (_, i) => `/avatars/animal_${i + 1}.png`)
@@ -219,24 +251,40 @@ export default function ProfileSetupPage() {
                             <label htmlFor="occupation" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 職業 <span className="text-red-500">*</span>
                             </label>
-                            <select
-                                id="occupation"
-                                name="occupation"
-                                required
-                                value={formData.occupation}
-                                onChange={handleChange}
-                                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
-                            >
-                                <option value="">選択してください</option>
-                                <option value="会社員">会社員</option>
-                                <option value="公務員">公務員</option>
-                                <option value="自営業">自営業</option>
-                                <option value="学生">学生</option>
-                                <option value="パート・アルバイト">パート・アルバイト</option>
-                                <option value="主婦・主夫">主婦・主夫</option>
-                                <option value="無職">無職</option>
-                                <option value="その他">その他</option>
-                            </select>
+                            <div className="space-y-2">
+                                <select
+                                    id="occupation"
+                                    name="occupation"
+                                    required
+                                    value={isCustomOccupation ? 'その他' : formData.occupation}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        if (value === 'その他') {
+                                            setIsCustomOccupation(true);
+                                            setFormData(prev => ({ ...prev, occupation: '' }));
+                                        } else {
+                                            setIsCustomOccupation(false);
+                                            setFormData(prev => ({ ...prev, occupation: value }));
+                                        }
+                                    }}
+                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                                >
+                                    <option value="">選択してください</option>
+                                    {OCCUPATION_OPTIONS.map((opt) => (
+                                        <option key={opt} value={opt}>{opt}</option>
+                                    ))}
+                                </select>
+                                {isCustomOccupation && (
+                                    <input
+                                        type="text"
+                                        required
+                                        value={formData.occupation}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, occupation: e.target.value }))}
+                                        placeholder="職業を入力してください"
+                                        className="block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-gray-500 animate-in fade-in slide-in-from-top-2 duration-200"
+                                    />
+                                )}
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
