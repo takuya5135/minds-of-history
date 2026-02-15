@@ -6,13 +6,16 @@ export async function updateSession(request: NextRequest) {
         request,
     })
 
-    // Vercelビルド時に環境変数がなくてもエラーにならないようにダミー値を使用
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder'
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    // 環境変数が欠落している場合のみダミー値を使用
+    const finalUrl = supabaseUrl || 'https://placeholder.supabase.co'
+    const finalKey = supabaseKey || 'placeholder'
 
     const supabase = createServerClient(
-        supabaseUrl,
-        supabaseKey,
+        finalUrl,
+        finalKey,
         {
             cookies: {
                 getAll() {

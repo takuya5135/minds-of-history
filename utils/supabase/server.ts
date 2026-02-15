@@ -4,13 +4,16 @@ import { cookies } from 'next/headers'
 export async function createClient() {
   const cookieStore = await cookies()
 
-  // Vercelビルド時に環境変数がなくてもエラーにならないようにダミー値を使用
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder'
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  // ビルド/SSR時で環境変数が欠落している場合のみダミー値を使用（ただしサーバー側なので基本はあるべき）
+  const finalUrl = supabaseUrl || 'https://placeholder.supabase.co'
+  const finalKey = supabaseKey || 'placeholder'
 
   return createServerClient(
-    supabaseUrl,
-    supabaseKey,
+    finalUrl,
+    finalKey,
     {
       cookies: {
         getAll() {
