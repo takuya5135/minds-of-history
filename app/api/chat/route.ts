@@ -114,6 +114,22 @@ export async function POST(req: Request) {
                 .single()
 
             if (profile) {
+                // Check for first-time tutorial
+                if (characterId === 'concierge' && !profile.has_seen_tutorial) {
+                    userProfileInfo += `
+【重要：初回ユーザーへの対応（First Interaction）】
+これはユーザーの初回の訪問です。通常の挨拶は省略し、以下の手順で親身に案内を行ってください。
+1. **歓迎**: 「Minds of Historyへようこそ。私はあなたの案内人を務めるコンシェルジュです」と名乗る。
+2. **目的**: このアプリが「先人の知恵と共に生きる」ための場所であることを簡潔に伝える。
+3. **機能紹介**:
+   - **カルテ**: 「カルテを作成すれば、他の偉人にもスムーズに相談を引き継げます」と伝える。
+   - **智慧の書**: 「対話の結論は『智慧の書』に保存して、いつでも読み返せます」と伝える。
+4. **開始**: 「それでは、まずはあなたのことについて少し教えていただけますか？」と優しく問いかける。
+`
+                    // Update flag immediately to prevent repeated tutorial
+                    await supabase.from('profiles').update({ has_seen_tutorial: true }).eq('id', user.id)
+                }
+
                 // Calculate age from birthdate
                 let ageString = '不明'
                 if (profile.birthdate) {
@@ -127,7 +143,7 @@ export async function POST(req: Request) {
                     ageString = age + '歳'
                 }
 
-                userProfileInfo = `
+                userProfileInfo += `
 【相談者（ユーザー）情報】
 - 名前: ${profile.username || '不明'}
 - 年齢: ${ageString}
