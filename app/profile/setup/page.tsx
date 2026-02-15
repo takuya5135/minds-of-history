@@ -73,11 +73,11 @@ export default function ProfileSetupPage() {
                         initialData.occupation = ''
                     }
 
-                    setFormData(initialData)
                 }
             }
-            loadProfile()
-        }, [])
+        }
+        loadProfile()
+    }, [])
 
     const humanAvatars = Array.from({ length: 8 }, (_, i) => `/avatars/human_${i + 1}.png`)
     const animalAvatars = Array.from({ length: 8 }, (_, i) => `/avatars/animal_${i + 1}.png`)
