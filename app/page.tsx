@@ -301,14 +301,14 @@ export default function ChatPage() {
       <div className="flex flex-1 flex-col h-full relative bg-white dark:bg-zinc-950 overflow-hidden">
         {/* Header */}
         <header className="flex h-16 shrink-0 items-center justify-between border-b bg-white dark:bg-zinc-950 px-4 shadow-sm z-20">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="rounded-md p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 md:hidden"
+              className="rounded-md p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 md:hidden shrink-0"
             >
               <Menu className="h-5 w-5" />
             </button>
-            <h1 className="text-xl font-bold truncate">{selectedChar.name}</h1>
+            <h1 className="text-lg md:text-xl font-bold truncate">{selectedChar.name}</h1>
           </div>
           <div className="flex items-center gap-2">
             <button
