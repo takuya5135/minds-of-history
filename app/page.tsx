@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Sidebar } from '@/components/chat/Sidebar'
 import { MessageList } from '@/components/chat/MessageList'
 import { MessageInput } from '@/components/chat/MessageInput'
+import { AppManualModal } from '@/components/AppManualModal'
 import { CHARACTERS } from '@/lib/characters'
 import { Character, Message } from '@/types/chat'
 import { Menu, Send, Bot, User, Loader2, Save, Info, Trash2, FileText, X, Copy, Check } from 'lucide-react'
@@ -41,6 +42,7 @@ export default function ChatPage() {
   const [karteText, setKarteText] = useState('')
   const [isGeneratingKarte, setIsGeneratingKarte] = useState(false)
   const [isCopied, setIsCopied] = useState(false)
+  const [isManualOpen, setIsManualOpen] = useState(false)
 
   const router = useRouter()
   const supabase = createClient()
@@ -351,7 +353,11 @@ export default function ChatPage() {
               <Trash2 className="h-5 w-5" />
             </button>
 
-            <button className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full" title={selectedChar.description}>
+            <button
+              onClick={() => setIsManualOpen(true)}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full"
+              title="使い方ガイドを表示"
+            >
               <Info className="h-5 w-5 text-gray-500" />
             </button>
           </div>
@@ -420,6 +426,8 @@ export default function ChatPage() {
           </div>
         </div>
       )}
+      {/* Manual Modal */}
+      <AppManualModal isOpen={isManualOpen} onClose={() => setIsManualOpen(false)} />
     </div>
   )
 }
