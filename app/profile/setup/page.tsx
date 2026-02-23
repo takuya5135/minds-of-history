@@ -43,6 +43,10 @@ export default function ProfileSetupPage() {
         avatar_url: '/avatars/human_1.png', // Default
     })
 
+    const [birthYear, setBirthYear] = useState('')
+    const [birthMonth, setBirthMonth] = useState('')
+    const [birthDay, setBirthDay] = useState('')
+
     useEffect(() => {
         const loadProfile = async () => {
             const supabase = createClient()
@@ -65,6 +69,15 @@ export default function ProfileSetupPage() {
                         avatar_url: profile.avatar_url || '/avatars/human_1.png',
                     }
 
+                    if (profile.birthdate) {
+                        const [y, m, d] = profile.birthdate.split('-')
+                        setBirthYear(y)
+                        setBirthMonth(m.replace(/^0+/, ''))
+                        setBirthDay(d.replace(/^0+/, ''))
+                    }
+
+                    setFormData(initialData)
+
                     // Custom occupation check
                     if (profile.occupation && !OCCUPATION_OPTIONS.includes(profile.occupation)) {
                         setIsCustomOccupation(true)
@@ -78,6 +91,15 @@ export default function ProfileSetupPage() {
         }
         loadProfile()
     }, [])
+
+    useEffect(() => {
+        if (birthYear && birthMonth && birthDay) {
+            setFormData(prev => ({
+                ...prev,
+                birthdate: `${birthYear}-${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`
+            }))
+        }
+    }, [birthYear, birthMonth, birthDay])
 
     const humanAvatars = Array.from({ length: 8 }, (_, i) => `/avatars/human_${i + 1}.png`)
     const animalAvatars = Array.from({ length: 8 }, (_, i) => `/avatars/animal_${i + 1}.png`)
@@ -128,6 +150,18 @@ export default function ProfileSetupPage() {
     const selectAvatar = (url: string) => {
         setFormData(prev => ({ ...prev, avatar_url: url }))
     }
+
+    // 生年月日選択用のオプション生成
+    const currentYear = new Date().getFullYear()
+    const years = Array.from({ length: 100 }, (_, i) => currentYear - i)
+    const months = Array.from({ length: 12 }, (_, i) => i + 1)
+
+    // 選択された年月から日数を計算
+    const getDaysInMonth = (year: string, month: string) => {
+        if (!year || !month) return 31
+        return new Date(parseInt(year), parseInt(month), 0).getDate()
+    }
+    const days = Array.from({ length: getDaysInMonth(birthYear, birthMonth) }, (_, i) => i + 1)
 
     return (
         <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-gray-50 dark:bg-zinc-950">
@@ -209,42 +243,67 @@ export default function ProfileSetupPage() {
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label htmlFor="birthdate" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    生年月日 <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    id="birthdate"
-                                    name="birthdate"
-                                    type="date"
-                                    required
-                                    value={formData.birthdate}
-                                    onChange={handleChange}
-                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-gray-500"
-                                />
-                            </div>
-                            <div>
-                                <label htmlFor="gender" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    性別 <span className="text-red-500">*</span>
-                                </label>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                生年月日 <span className="text-red-500">*</span>
+                            </label>
+                            <div className="grid grid-cols-3 gap-2 mt-1">
                                 <select
-                                    id="gender"
-                                    name="gender"
                                     required
-                                    value={formData.gender}
-                                    onChange={handleChange}
-                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                                    value={birthYear}
+                                    onChange={(e) => setBirthYear(e.target.value)}
+                                    className="block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
                                 >
-                                    <option value="">選択してください</option>
-                                    <option value="男性">男性</option>
-                                    <option value="女性">女性</option>
-                                    <option value="トランスジェンダー">トランスジェンダー</option>
-                                    <option value="ノンバイナリー">ノンバイナリー</option>
-                                    <option value="その他">その他</option>
-                                    <option value="回答しない">回答しない</option>
+                                    <option value="">年</option>
+                                    {years.map(y => (
+                                        <option key={y} value={y}>{y}</option>
+                                    ))}
+                                </select>
+                                <select
+                                    required
+                                    value={birthMonth}
+                                    onChange={(e) => setBirthMonth(e.target.value)}
+                                    className="block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                                >
+                                    <option value="">月</option>
+                                    {months.map(m => (
+                                        <option key={m} value={m}>{m}</option>
+                                    ))}
+                                </select>
+                                <select
+                                    required
+                                    value={birthDay}
+                                    onChange={(e) => setBirthDay(e.target.value)}
+                                    className="block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                                >
+                                    <option value="">日</option>
+                                    {days.map(d => (
+                                        <option key={d} value={d}>{d}</option>
+                                    ))}
                                 </select>
                             </div>
+                        </div>
+
+                        <div>
+                            <label htmlFor="gender" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                性別 <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                                id="gender"
+                                name="gender"
+                                required
+                                value={formData.gender}
+                                onChange={handleChange}
+                                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                            >
+                                <option value="">選択してください</option>
+                                <option value="男性">男性</option>
+                                <option value="女性">女性</option>
+                                <option value="トランスジェンダー">トランスジェンダー</option>
+                                <option value="ノンバイナリー">ノンバイナリー</option>
+                                <option value="その他">その他</option>
+                                <option value="回答しない">回答しない</option>
+                            </select>
                         </div>
 
                         <div>
