@@ -262,7 +262,7 @@ export default function ChatPage() {
       const response = await fetch('/api/karte', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ characterId: selectedCharId })
+        body: JSON.stringify({ characterId: selectedCharId, characterName: selectedChar.name })
       })
 
       if (response.ok) {
@@ -383,7 +383,7 @@ export default function ChatPage() {
             <div className="flex items-center justify-between p-4 border-b dark:border-zinc-800">
               <div className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                <h3 className="text-lg font-bold">偉人に渡すカルテ（要約）</h3>
+                <h3 className="text-lg font-bold">カルテ（{selectedChar.name}との相談要約）</h3>
               </div>
               <button onClick={() => setIsKarteModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full">
                 <X className="h-5 w-5" />
