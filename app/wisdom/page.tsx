@@ -10,6 +10,7 @@ import { CHARACTERS } from '@/lib/characters'
 export default function WisdomPage() {
     const [wisdoms, setWisdoms] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
+    const [printingId, setPrintingId] = useState<string | null>(null)
     const router = useRouter()
     const supabase = createClient()
 
@@ -38,7 +39,7 @@ export default function WisdomPage() {
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-black text-gray-900 dark:text-gray-100 p-4 md:p-8">
-            <header className="max-w-4xl mx-auto mb-8 flex items-center gap-4">
+            <header className="max-w-4xl mx-auto mb-8 flex items-center gap-4 print:hidden">
                 <button
                     onClick={() => router.push('/')}
                     className="p-2 hover:bg-gray-200 dark:hover:bg-zinc-800 rounded-full transition-colors"
@@ -76,7 +77,8 @@ export default function WisdomPage() {
                         {wisdoms.map((wisdom) => {
                             const character = CHARACTERS.find(c => c.id === wisdom.character_id)
                             return (
-                                <article key={wisdom.id} className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden">
+                                <article key={wisdom.id} className={`bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden ${printingId && printingId !== wisdom.id ? 'print:hidden' : ''
+                                    }`}>
                                     <div className="p-6 md:p-8">
                                         <div className="flex items-center justify-between mb-6">
                                             <div className="flex items-center gap-3">
@@ -97,23 +99,14 @@ export default function WisdomPage() {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-2 no-print">
+                                            <div className="flex items-center gap-2 print:hidden">
                                                 <button
                                                     onClick={() => {
-                                                        const printContent = document.getElementById(`wisdom-${wisdom.id}`)
-                                                        if (printContent) {
-                                                            // Simple print: hide everything else
-                                                            // Ideally we use a class to hide others, but standard window.print prints the whole page.
-                                                            // A quick trick for "print this article only" is to use a media query that hides everything except a specific class,
-                                                            // strictly speaking we need to dynamically set a class on the body or use a separate print style.
-                                                            // For simplicity and robustness here without complex CSS: we'll rely on the user printing the page, 
-                                                            // OR we can open a new window.
-                                                            // Let's try the modern CSS approach: add a 'print-mode' class to body that hides peers.
-
-                                                            // Actually, let's just use window.print(). The user can choose pages. 
-                                                            // To make it nicer, we can add a simple style block to hide sidebar/header when printing.
+                                                        setPrintingId(wisdom.id)
+                                                        setTimeout(() => {
                                                             window.print()
-                                                        }
+                                                            setPrintingId(null)
+                                                        }, 100)
                                                     }}
                                                     className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
                                                     title="PDFとして保存 / 印刷"
