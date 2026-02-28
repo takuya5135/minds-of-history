@@ -77,8 +77,11 @@ export default function WisdomPage() {
                         {wisdoms.map((wisdom) => {
                             const character = CHARACTERS.find(c => c.id === wisdom.character_id)
                             return (
-                                <article key={wisdom.id} className={`bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden ${printingId && printingId !== wisdom.id ? 'print:hidden' : ''
-                                    }`}>
+                                <article
+                                    key={wisdom.id}
+                                    className={`bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden ${printingId && printingId !== wisdom.id ? 'hidden print:hidden' : ''
+                                        }`}
+                                >
                                     <div className="p-6 md:p-8">
                                         <div className="flex items-center justify-between mb-6">
                                             <div className="flex items-center gap-3">
