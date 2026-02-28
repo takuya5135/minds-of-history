@@ -4,7 +4,7 @@ import { createClient } from '@/utils/supabase/server'
 
 export async function POST(req: Request) {
     try {
-        const { characterId } = await req.json()
+        const { characterId, characterName } = await req.json()
 
         const supabase = await createClient()
         const { data: { user } } = await supabase.auth.getUser()
@@ -50,10 +50,11 @@ export async function POST(req: Request) {
             .join('\n')
 
         const prompt = `
-以下の相談内容と対話の履歴を読み取り、別の専門家（偉人）に相談するための「カルテ（要約）」を作成してください。
+以下の相談内容と対話の履歴を読み取り、別の専門家（偉人）に相談するための要約を作成してください。
 相談者はこのテキストをコピーして別の偉人に貼り付けることで、これまでの経緯を手短に説明できるようにしたいと考えています。
 
 【ルール】
+- 冒頭のタイトルは必ず「## カルテ（${characterName || '偉人'}との相談要約）」としてください。
 - 相談者の現在の悩み、背景、これまでに得られた気づきを簡潔にまとめてください。
 - 150文字〜300文字程度で、要点を絞って記述してください。
 - 相談者がそのままコピペして使えるような、三人称または客観的な視点でのまとめにしてください。
